@@ -35,9 +35,10 @@ EPOCHS = 1000
 NUM_WORKERS = 2
 PIN_MEMORY = True
 LOAD_MODEL = False
-LOAD_MODEL_FILE = "overfit.pth.tar"
-IMG_DIR = "data/images"
-LABEL_DIR = "data/labels"
+LOAD_MODEL_FILE = "./outputs/my_checkpoint.pth.tar"
+IMG_DIR = "data/data/images"
+LABEL_DIR = "data/data/labels"
+H = { "mAP" : [], "mean_loss": []}
 
 
 class Compose(object):
@@ -69,11 +70,16 @@ def train_fn(train_loader, model, optimizer, loss_fn):
 
         # update progress bar
         loop.set_postfix(loss=loss.item())
-
+        total_mean_loss = sum(mean_loss)/len(mean_loss)
+    
+    H["mean_loss"].append(total_mean_loss) 
+    print(f"Mean loss was {total_mean_loss}")
     print(f"Mean loss was {sum(mean_loss)/len(mean_loss)}")
 
 
 def main():
+    import time
+    start_time = time.time()
     model = Yolov1(split_size=7, num_boxes=2, num_classes=20).to(DEVICE)
     optimizer = optim.Adam(
         model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY
@@ -84,7 +90,7 @@ def main():
         load_checkpoint(torch.load(LOAD_MODEL_FILE), model, optimizer)
 
     train_dataset = VOCDataset(
-        "data/100examples.csv",
+        "data/train.csv",
         transform=transform,
         img_dir=IMG_DIR,
         label_dir=LABEL_DIR,
@@ -131,8 +137,9 @@ def main():
             pred_boxes, target_boxes, iou_threshold=0.5, box_format="midpoint"
         )
         print(f"Train mAP: {mean_avg_prec}")
+        H["mAP"].append(mean_avg_prec)
 
-        #if mean_avg_prec > 0.9:
+        #if (mean_avg_prec > 0.9) or (epoch == (EPOCH - 1)):
         #    checkpoint = {
         #        "state_dict": model.state_dict(),
         #        "optimizer": optimizer.state_dict(),
@@ -142,6 +149,27 @@ def main():
         #    time.sleep(10)
 
         train_fn(train_loader, model, optimizer, loss_fn)
+        
+    
+    print("Total training time: %s seconds" % (time.time() - start_time))
+    print("=> Saving mAP plot")
+    epoch_list = list(range(1,EPOCHS+1))
+    plt.style.use("ggplot")
+    plt.figure()
+    plt.plot(epoch_list, H["mAP"])
+    plt.title("Accuracy Plot")
+    plt.xlabel("Epochs")
+    plt.ylabel("Mean Absolute Precision")
+    plt.savefig("./outputs/results_accuracy.jpg")
+
+    plt.style.use("ggplot")
+    plt.figure()
+    plt.plot(epoch_list, H["mean_loss"])
+    plt.title("Loss Plot")
+    plt.xlabel("Epochs")
+    plt.ylabel("Mean Loss")
+    plt.savefig("./outputs/results_loss.jpg")
+
 
 
 if __name__ == "__main__":
