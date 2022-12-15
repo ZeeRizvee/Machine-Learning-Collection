@@ -65,7 +65,11 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
     Returns:
         list: bboxes after performing NMS given a specific IoU threshold
     """
-
+    classes = ["aeroplane", "bicycle", "bird", "boat", "bottle", "bus", 
+    "car", "cat", "chair", "cow", "diningtable", "dog", "horse", 
+    "motorbike", "person", "pottedplant", "sheep", "sofa", "train", 
+    "tvmonitor"]
+    
     assert type(bboxes) == list
 
     bboxes = [box for box in bboxes if box[1] > threshold]
@@ -86,7 +90,8 @@ def non_max_suppression(bboxes, iou_threshold, threshold, box_format="corners"):
             )
             < iou_threshold
         ]
-
+        
+        print("Predicted class:", classes[int(chosen_box[0])])
         bboxes_after_nms.append(chosen_box)
 
     return bboxes_after_nms
@@ -229,7 +234,8 @@ def plot_image(image, boxes):
         )
         # Add the patch to the Axes
         ax.add_patch(rect)
-
+        
+    plt.savefig('./outputs/output.png')
     plt.show()
 
 def get_bboxes(
