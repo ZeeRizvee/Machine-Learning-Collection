@@ -85,7 +85,6 @@ class Yolov1(Module):
         return Sequential(Flatten(), Linear(in_features=1024*S*S, out_features=4096),
                     LeakyReLU(0.1), Linear(in_features=4096, out_features=S*S*(C+B*5)))
 
-
 ##### Sanity check #####
 
 # def test(in_channels=3, split_size=7, num_boxes=2, num_classes=30):
